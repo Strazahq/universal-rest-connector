@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sample midPoint 4.10 resource that maps the read-only app, tool and user classes
+  of samples/straza/straza-schema.json.
+
+  Because the schema file also declares __ACCOUNT__ and __GROUP__
+  (ri:AccountObjectClass, ri:GroupObjectClass), midPoint names the other classes
+  ri:Custom<name>ObjectClass.
+
+  Before import: set baseUrl, the apiToken clearValue and schemaFilePath, and copy
+  the schema file to that path on the midPoint host.
+-->
+<resource oid="0a1b2c3d-4e5f-6071-8293-a1b2c3d4e5f6"
+          xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
+          xmlns:c="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
+          xmlns:icfs="http://midpoint.evolveum.com/xml/ns/public/connector/icf-1/resource-schema-3"
+          xmlns:icfc="http://midpoint.evolveum.com/xml/ns/public/connector/icf-1/connector-schema-3"
+          xmlns:ri="http://midpoint.evolveum.com/xml/ns/public/resource/instance-3"
+          xmlns:q="http://prism.evolveum.com/xml/ns/public/query-3">
+
+    <name>Straza (universal-rest-connector)</name>
+
+    <!-- Bind by connector class; midPoint resolves the discovered ConnectorType. -->
+    <connectorRef type="ConnectorType">
+        <filter>
+            <q:equal>
+                <q:path>connectorType</q:path>
+                <q:value>ai.straza.connector.rest.UniversalRestConnector</q:value>
+            </q:equal>
+        </filter>
+    </connectorRef>
+
+    <connectorConfiguration>
+        <!-- .../bundle/<ConnectorBundle-Name>/<connector class> from the JAR manifest. -->
+        <icfc:configurationProperties
+                xmlns:cfg="http://midpoint.evolveum.com/xml/ns/public/connector/icf-1/bundle/ai.straza.universal-rest-connector/ai.straza.connector.rest.UniversalRestConnector">
+            <cfg:baseUrl>https://straza.example.com:8443</cfg:baseUrl>
+            <!-- Admin API token from strazactl api-token create, scopes
+                 scim:read,scim:write,identity:read,apps:read,changes:read,config:read -->
+            <cfg:apiToken>
+                <clearValue>REPLACE_WITH_ADMIN_API_TOKEN</clearValue>
+            </cfg:apiToken>
+            <cfg:schemaFilePath>/opt/midpoint/var/straza/straza-schema.json</cfg:schemaFilePath>
+            <cfg:testEndpoint>/v1/admin/overview</cfg:testEndpoint>
+            <!-- <cfg:trustAllCertificates>false</cfg:trustAllCertificates> development only -->
+        </icfc:configurationProperties>
+    </connectorConfiguration>
+
+    <!-- midPoint fetches <schema> from the connector on the first test. -->
+
+    <schemaHandling>
+
+        <!-- user = account, read-only. Users are provisioned through __ACCOUNT__. -->
+        <objectType>
+            <kind>account</kind>
+            <intent>default</intent>
+            <displayName>Straza user</displayName>
+            <default>true</default>
+            <objectClass>ri:CustomuserObjectClass</objectClass>
+            <attribute>
+                <ref>icfs:name</ref>          <!-- __NAME__ = username -->
+                <displayName>Username</displayName>
+            </attribute>
+            <attribute><ref>ri:email</ref></attribute>
+            <attribute><ref>ri:display</ref></attribute>
+            <attribute><ref>ri:status</ref></attribute>
+            <attribute><ref>ri:origin</ref></attribute>
+            <attribute><ref>ri:external_id</ref></attribute>
+            <attribute>
+                <ref>ri:roles</ref>           <!-- role ids of direct assignments -->
+                <displayName>Roles (raw)</displayName>
+            </attribute>
+        </objectType>
+
+        <!-- app = entitlement, intent app; ri:tools lists its tools. -->
+        <objectType>
+            <kind>entitlement</kind>
+            <intent>app</intent>
+            <displayName>Straza app</displayName>
+            <objectClass>ri:CustomappObjectClass</objectClass>
+            <attribute>
+                <ref>icfs:name</ref>
+                <displayName>App</displayName>
+            </attribute>
+            <attribute><ref>ri:version</ref></attribute>
+            <attribute><ref>ri:runtime</ref></attribute>
+            <attribute><ref>ri:status</ref></attribute>
+            <attribute><ref>ri:source</ref></attribute>
+            <attribute><ref>ri:tools</ref></attribute>
+        </objectType>
+
+        <!-- tool = entitlement, intent tool; ri:app is its parent app. -->
+        <objectType>
+            <kind>entitlement</kind>
+            <intent>tool</intent>
+            <displayName>Straza tool</displayName>
+            <objectClass>ri:CustomtoolObjectClass</objectClass>
+            <attribute>
+                <ref>icfs:name</ref>
+                <displayName>Tool</displayName>
+            </attribute>
+            <attribute>
+                <ref>ri:app</ref>
+                <displayName>App</displayName>
+            </attribute>
+        </objectType>
+
+        <!-- Roles are the __GROUP__ class (ri:GroupObjectClass): icfs:name is the role
+             name, ri:members the only writable attribute, and ri:apps the role's apps. -->
+
+        <!--
+          ri:roles holds role ids, which equal the __GROUP__ uids, so a resource
+          that also maps __GROUP__ can link them with a simulated association.
+        -->
+
+    </schemaHandling>
+</resource>

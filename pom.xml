@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.evolveum.polygon</groupId>
+        <artifactId>connector-parent</artifactId>
+        <version>1.5.2.0</version>
+    </parent>
+
+    <groupId>ai.straza</groupId>
+    <artifactId>universal-rest-connector</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+
+    <name>universal-rest-connector</name>
+    <description>
+        Schema-driven ConnId REST connector for midPoint 4.10. One schema file
+        declares every object class with its endpoints, attributes, wire paths and
+        operations, over plain JSON REST or SCIM 2.0.
+    </description>
+    <url>https://github.com/strazahq/universal-rest-connector</url>
+
+    <licenses>
+        <license>
+            <name>Apache-2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/strazahq/universal-rest-connector</url>
+        <connection>scm:git:https://github.com/strazahq/universal-rest-connector.git</connection>
+        <developerConnection>scm:git:git@github.com:strazahq/universal-rest-connector.git</developerConnection>
+    </scm>
+
+    <properties>
+        <!-- Drives the assembly manifest Main-Class and the bundle descriptor. -->
+        <connector.package>ai.straza.connector.rest</connector.package>
+        <connector.class>UniversalRestConnector</connector.class>
+        <assembly.path>src/main/assembly/connector.xml</assembly.path>
+        <maven.jar.plugin.version>3.5.0</maven.jar.plugin.version>
+
+        <!-- Compiler source and target, read by the polygon parent: Java 21, the
+             runtime of the midPoint 4.10 images. -->
+        <project.source.version>21</project.source.version>
+
+        <jackson.version>2.19.4</jackson.version>
+
+        <!-- Fixed archive timestamps make the bundle reproducible. Release builds
+             set it to the tagged commit's time. -->
+        <project.build.outputTimestamp>2026-10-06T00:00:00Z</project.build.outputTimestamp>
+
+        <!-- Default test run = hermetic unit tests. Add the strazad integration
+             tests with -DtestGroups=unit,integration (needs STRAZA_BIN set). -->
+        <testGroups>unit</testGroups>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>evolveum-nexus-releases</id>
+            <name>Evolveum Releases</name>
+            <url>https://nexus.evolveum.com/nexus/content/repositories/releases/</url>
+        </repository>
+        <repository>
+            <id>evolveum-nexus-snapshots</id>
+            <name>Evolveum Snapshots</name>
+            <url>https://nexus.evolveum.com/nexus/content/repositories/snapshots/</url>
+        </repository>
+        <repository>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <!-- JSON binding for REST API requests and responses. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <!-- HTTP transport uses the JDK's java.net.http.HttpClient (no extra dependency). -->
+
+        <!-- midPoint provides the ConnId framework at runtime, so it is neither
+             bundled nor listed in the SBOM. -->
+        <dependency>
+            <groupId>net.tirasa.connid</groupId>
+            <artifactId>connector-framework</artifactId>
+            <version>${connId.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.evolveum.polygon</groupId>
+            <artifactId>connector-common</artifactId>
+            <version>${polygon.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.tirasa.connid</groupId>
+                    <artifactId>connector-framework</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>7.10.2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <!-- Release builds run versions:set with the tag's version. -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>2.22.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <!-- The bundle's bytes depend on the JDK major version, so every build
+                 uses JDK 21. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.6.3</version>
+                <executions>
+                    <execution>
+                        <id>require-jdk-21</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[21,22)</version>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- The plain jar is replaced by the assembled connector bundle below. -->
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven.jar.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>default-jar</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+
+            <!-- Builds the ConnId bundle: classes at the root, runtime deps under
+                 lib/, and (via connector-parent) the ConnectorBundle-* manifest. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>${connector.package}.${connector.class}</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptors>
+                        <descriptor>${assembly.path}</descriptor>
+                    </descriptors>
+                    <finalName>${project.artifactId}-${project.version}</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+            </plugin>
+
+            <!-- CycloneDX SBOM of the bundled libraries: runtime scope only, so the
+                 provided ConnId framework and test libraries are left out. -->
+            <plugin>
+                <groupId>org.cyclonedx</groupId>
+                <artifactId>cyclonedx-maven-plugin</artifactId>
+                <version>2.9.3</version>
+                <configuration>
+                    <outputFormat>json</outputFormat>
+                    <outputName>${project.artifactId}-${project.version}.cdx</outputName>
+                    <includeProvidedScope>false</includeProvidedScope>
+                    <includeSystemScope>false</includeSystemScope>
+                    <includeTestScope>false</includeTestScope>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>makeBom</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <groups>${testGroups}</groups>
+                </configuration>
+                <dependencies>
+                    <!-- Force the TestNG provider; without this surefire auto-detects
+                         the JUnit Platform (pulled in transitively) and runs 0 tests. -->
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-testng</artifactId>
+                        <version>3.2.5</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,10 @@
+objectClass __GROUP__ container=false
+__NAME__ type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+apps type=java.lang.String flags=MULTIVALUED,NOT_CREATABLE,NOT_UPDATEABLE
+description type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+members type=java.lang.String flags=MULTIVALUED
+plane type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+policies type=java.lang.String flags=MULTIVALUED,NOT_CREATABLE,NOT_UPDATEABLE
+role type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+roleKind type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+tools type=java.lang.String flags=MULTIVALUED,NOT_CREATABLE,NOT_UPDATEABLE

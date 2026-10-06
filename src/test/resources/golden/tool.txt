@@ -1,0 +1,3 @@
+objectClass tool container=false
+__NAME__ type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+app type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE

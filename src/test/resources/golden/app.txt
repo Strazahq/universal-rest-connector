@@ -1,0 +1,8 @@
+objectClass app container=false
+__NAME__ type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+detail type=java.lang.String flags=NOT_CREATABLE,NOT_RETURNED_BY_DEFAULT,NOT_UPDATEABLE
+runtime type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+source type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+status type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+tools type=java.lang.String flags=MULTIVALUED,NOT_CREATABLE,NOT_UPDATEABLE
+version type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE

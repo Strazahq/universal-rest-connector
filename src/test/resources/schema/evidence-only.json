@@ -1,0 +1,19 @@
+{
+  "//": "One read-only json class, no reserved ConnId class and no change feed.",
+  "objects": [
+    {
+      "objectClass": "widget",
+      "listEndpoint": "/v1/widgets",
+      "icfsUid": "id",
+      "icfsName": "name",
+      "attributes": {
+        "label": {},
+        "tags": { "multivalued": true }
+      },
+      "sync": {
+        "requestTypes": ["widget"],
+        "self": ["widget"]
+      }
+    }
+  ]
+}

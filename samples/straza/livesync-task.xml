@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sample midPoint 4.10 LiveSync tasks, one per object class, because the connector
+  keeps a sync token per class. The first run starts at the current feed head.
+
+  objectRef and resourceRef point at the resource from midpoint-resource.xml.
+  Adjust the OIDs and the interval, and add <synchronization> reactions on the
+  resource to act on the changes. The resource's apiToken must be a long-lived
+  admin API token.
+-->
+<objects xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
+         xmlns:ri="http://midpoint.evolveum.com/xml/ns/public/resource/instance-3">
+
+    <!-- __ACCOUNT__: driven by user events. -->
+    <task oid="b0000000-0000-0000-0000-00000000000a">
+        <name>Straza LiveSync - account</name>
+        <objectRef oid="0a1b2c3d-4e5f-6071-8293-a1b2c3d4e5f6" type="ResourceType"/>
+        <executionState>runnable</executionState>
+        <schedule>
+            <interval>10</interval>   <!-- seconds between polls -->
+        </schedule>
+        <activity>
+            <work>
+                <liveSynchronization>
+                    <resourceObjects>
+                        <resourceRef oid="0a1b2c3d-4e5f-6071-8293-a1b2c3d4e5f6"/>
+                        <kind>account</kind>
+                        <intent>default</intent>
+                        <objectclass>ri:AccountObjectClass</objectclass>
+                    </resourceObjects>
+                </liveSynchronization>
+            </work>
+        </activity>
+    </task>
+
+    <!-- __GROUP__: driven by role events; a binding event re-emits every role. -->
+    <task oid="b0000000-0000-0000-0000-00000000000b">
+        <name>Straza LiveSync - role (wire-group)</name>
+        <objectRef oid="0a1b2c3d-4e5f-6071-8293-a1b2c3d4e5f6" type="ResourceType"/>
+        <executionState>runnable</executionState>
+        <schedule><interval>10</interval></schedule>
+        <activity>
+            <work>
+                <liveSynchronization>
+                    <resourceObjects>
+                        <resourceRef oid="0a1b2c3d-4e5f-6071-8293-a1b2c3d4e5f6"/>
+                        <kind>entitlement</kind>
+                        <intent>role</intent>
+                        <objectclass>ri:GroupObjectClass</objectclass>
+                    </resourceObjects>
+                </liveSynchronization>
+            </work>
+        </activity>
+    </task>
+
+    <!-- app: driven by app events, keyed by app uid. -->
+    <task oid="b0000000-0000-0000-0000-00000000000c">
+        <name>Straza LiveSync - app</name>
+        <objectRef oid="0a1b2c3d-4e5f-6071-8293-a1b2c3d4e5f6" type="ResourceType"/>
+        <executionState>runnable</executionState>
+        <schedule><interval>10</interval></schedule>
+        <activity>
+            <work>
+                <liveSynchronization>
+                    <resourceObjects>
+                        <resourceRef oid="0a1b2c3d-4e5f-6071-8293-a1b2c3d4e5f6"/>
+                        <kind>entitlement</kind>
+                        <intent>app</intent>
+                        <objectclass>ri:CustomappObjectClass</objectclass>
+                    </resourceObjects>
+                </liveSynchronization>
+            </work>
+        </activity>
+    </task>
+
+    <!-- tool: a tool event re-emits every tool. -->
+    <task oid="b0000000-0000-0000-0000-00000000000d">
+        <name>Straza LiveSync - tool</name>
+        <objectRef oid="0a1b2c3d-4e5f-6071-8293-a1b2c3d4e5f6" type="ResourceType"/>
+        <executionState>runnable</executionState>
+        <schedule><interval>10</interval></schedule>
+        <activity>
+            <work>
+                <liveSynchronization>
+                    <resourceObjects>
+                        <resourceRef oid="0a1b2c3d-4e5f-6071-8293-a1b2c3d4e5f6"/>
+                        <kind>entitlement</kind>
+                        <intent>tool</intent>
+                        <objectclass>ri:CustomtoolObjectClass</objectclass>
+                    </resourceObjects>
+                </liveSynchronization>
+            </work>
+        </activity>
+    </task>
+
+</objects>
