@@ -48,7 +48,7 @@
              runtime of the midPoint 4.10 images. -->
         <project.source.version>21</project.source.version>
 
-        <jackson.version>2.19.4</jackson.version>
+        <jackson.version>2.22.3</jackson.version>
 
         <!-- Fixed archive timestamps make the bundle reproducible. Release builds
              set it to the tagged commit's time. -->
