@@ -7,17 +7,17 @@ license in its own name and on behalf of the author.
 The connector JAR bundles the following libraries under lib/. Each JAR keeps
 its own license and notice files.
 
-jackson-databind 2.19.4
+jackson-databind 2.22.3
   Copyright 2007-, Tatu Saloranta (tatu.saloranta@iki.fi)
   Licensed under the Apache License, Version 2.0.
 
-jackson-core 2.19.4
+jackson-core 2.22.3
   Copyright 2007-, Tatu Saloranta (tatu.saloranta@iki.fi)
   Licensed under the Apache License, Version 2.0.
   Includes a shaded copy of FastDoubleParser, Copyright 2023 Werner
   Randelshofer, Switzerland, licensed under the MIT License.
 
-jackson-annotations 2.19.4
+jackson-annotations 2.22
   Copyright 2007-, Tatu Saloranta (tatu.saloranta@iki.fi)
   Licensed under the Apache License, Version 2.0.
 
