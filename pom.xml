@@ -42,7 +42,7 @@
         <connector.package>ai.straza.connector.rest</connector.package>
         <connector.class>UniversalRestConnector</connector.class>
         <assembly.path>src/main/assembly/connector.xml</assembly.path>
-        <maven.jar.plugin.version>3.5.0</maven.jar.plugin.version>
+        <maven.jar.plugin.version>3.5.1</maven.jar.plugin.version>
 
         <!-- Compiler source and target, read by the polygon parent: Java 21, the
              runtime of the midPoint 4.10 images. -->
