@@ -1,0 +1,10 @@
+objectClass user container=false
+__NAME__ type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+display type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+email type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+external_id type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+kind type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+origin type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+roles type=java.lang.String flags=MULTIVALUED,NOT_CREATABLE,NOT_UPDATEABLE
+status type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE
+title type=java.lang.String flags=NOT_CREATABLE,NOT_UPDATEABLE

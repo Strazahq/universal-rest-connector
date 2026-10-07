@@ -1,0 +1,203 @@
+{
+  "name": "groups-roles",
+  "steps": [
+    {
+      "note": "wire-groups render exported Straza roles (id = role id, displayName = role name); the IdM finds them by the displayName filter",
+      "request": {
+        "method": "GET",
+        "path": "/scim/v2/Groups?filter=displayName eq \"scim-dev\""
+      },
+      "expect": {
+        "status": 200,
+        "subset": {
+          "totalResults": 1,
+          "Resources": [
+            {
+              "displayName": "scim-dev"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "group create answers 501 (RFC 7644 unsupported operation), not 403, which an IdM reads as bad credentials",
+      "request": {
+        "method": "POST",
+        "path": "/scim/v2/Groups",
+        "body": {
+          "schemas": [
+            "urn:ietf:params:scim:schemas:core:2.0:Group"
+          ],
+          "displayName": "idm-born-team"
+        }
+      },
+      "expect": {
+        "status": 501,
+        "subset": {
+          "detail": "roles are Straza-born; the IdM imports them and assigns membership"
+        }
+      }
+    },
+    {
+      "note": "a user to hold the role",
+      "request": {
+        "method": "POST",
+        "path": "/scim/v2/Users",
+        "body": {
+          "schemas": [
+            "urn:ietf:params:scim:schemas:core:2.0:User"
+          ],
+          "userName": "wanda"
+        }
+      },
+      "expect": {
+        "status": 201,
+        "subset": {
+          "userName": "wanda"
+        }
+      },
+      "capture": {
+        "uid": "id"
+      }
+    },
+    {
+      "note": "membership is role assignment: adding a member creates a direct scim-origin assignment, and the render reflects it",
+      "request": {
+        "method": "GET",
+        "path": "/scim/v2/Groups?filter=displayName eq \"scim-dev\""
+      },
+      "expect": {
+        "status": 200
+      },
+      "capture": {
+        "gid": "Resources.0.id"
+      }
+    },
+    {
+      "request": {
+        "method": "PATCH",
+        "path": "/scim/v2/Groups/{gid}",
+        "body": {
+          "schemas": [
+            "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+          ],
+          "Operations": [
+            {
+              "op": "add",
+              "path": "members",
+              "value": [
+                {
+                  "value": "{uid}"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expect": {
+        "status": 200,
+        "subset": {
+          "members": [
+            {
+              "value": "{uid}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "displayName is readOnly: a rename PATCH answers the mutability error",
+      "request": {
+        "method": "PATCH",
+        "path": "/scim/v2/Groups/{gid}",
+        "body": {
+          "schemas": [
+            "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+          ],
+          "Operations": [
+            {
+              "op": "replace",
+              "path": "displayName",
+              "value": "renamed"
+            }
+          ]
+        }
+      },
+      "expect": {
+        "status": 400,
+        "subset": {
+          "schemas": [
+            "urn:ietf:params:scim:api:messages:2.0:Error"
+          ],
+          "scimType": "mutability"
+        }
+      }
+    },
+    {
+      "note": "PUT replaces members only: name fields in the body are ignored, since Okta sends the full document on every membership update",
+      "request": {
+        "method": "PUT",
+        "path": "/scim/v2/Groups/{gid}",
+        "body": {
+          "schemas": [
+            "urn:ietf:params:scim:schemas:core:2.0:Group"
+          ],
+          "displayName": "Okta Developers",
+          "members": [
+            {
+              "value": "{uid}"
+            }
+          ]
+        }
+      },
+      "expect": {
+        "status": 200,
+        "subset": {
+          "displayName": "scim-dev",
+          "members": [
+            {
+              "value": "{uid}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "note": "a value-filter remove takes the membership away again",
+      "request": {
+        "method": "PATCH",
+        "path": "/scim/v2/Groups/{gid}",
+        "body": {
+          "schemas": [
+            "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+          ],
+          "Operations": [
+            {
+              "op": "remove",
+              "path": "members[value eq \"{uid}\"]"
+            }
+          ]
+        }
+      },
+      "expect": {
+        "status": 200,
+        "subset": {
+          "displayName": "scim-dev"
+        }
+      }
+    },
+    {
+      "note": "group delete answers 501, like create",
+      "request": {
+        "method": "DELETE",
+        "path": "/scim/v2/Groups/{gid}"
+      },
+      "expect": {
+        "status": 501,
+        "subset": {
+          "detail": "roles are Straza-born; the IdM imports them and assigns membership"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "//": "A create-only schema URN gated on a misspelled configuration property.",
+  "objects": [
+    {
+      "objectClass": "__ACCOUNT__",
+      "dialect": "scim",
+      "basePath": "/scim/v2",
+      "coreSchema": "urn:ietf:params:scim:schemas:core:2.0:User",
+      "icfsUid": "id",
+      "icfsName": "userName",
+      "operations": ["search", "create"],
+      "endpoints": {
+        "list": "/Users",
+        "create": "/Users"
+      },
+      "createOnlySchemas": [
+        {
+          "urn": "urn:example:agent",
+          "when": { "attribute": "userType", "in": ["agent"] },
+          "configGate": "emitAgentikUrn"
+        }
+      ],
+      "attributes": {
+        "__NAME__": { "required": true, "creatable": true, "updateable": true },
+        "userType": { "creatable": true, "updateable": true }
+      }
+    }
+  ]
+}

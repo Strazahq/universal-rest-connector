@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  LiveSync, one task per object class: the connector keeps a sync token per
+  class and polls the Straza change feed every 10 seconds.
+-->
+<objects xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
+         xmlns:ri="http://midpoint.evolveum.com/xml/ns/public/resource/instance-3">
+
+    <task oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c1b">
+        <name>Straza LiveSync - account</name>
+        <objectRef oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c01" type="ResourceType"/>
+        <executionState>runnable</executionState>
+        <schedule><interval>10</interval></schedule>
+        <activity>
+            <work>
+                <liveSynchronization>
+                    <resourceObjects>
+                        <resourceRef oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c01"/>
+                        <kind>account</kind>
+                        <intent>default</intent>
+                        <objectclass>ri:AccountObjectClass</objectclass>
+                    </resourceObjects>
+                </liveSynchronization>
+            </work>
+        </activity>
+    </task>
+
+    <task oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c11">
+        <name>Straza LiveSync - app</name>
+        <objectRef oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c01" type="ResourceType"/>
+        <executionState>runnable</executionState>
+        <schedule><interval>10</interval></schedule>
+        <activity>
+            <work>
+                <liveSynchronization>
+                    <resourceObjects>
+                        <resourceRef oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c01"/>
+                        <kind>entitlement</kind>
+                        <intent>app</intent>
+                        <objectclass>ri:CustomappObjectClass</objectclass>
+                    </resourceObjects>
+                </liveSynchronization>
+            </work>
+        </activity>
+    </task>
+
+    <task oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c1a">
+        <name>Straza LiveSync - role</name>
+        <objectRef oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c01" type="ResourceType"/>
+        <executionState>runnable</executionState>
+        <schedule><interval>10</interval></schedule>
+        <activity>
+            <work>
+                <liveSynchronization>
+                    <resourceObjects>
+                        <resourceRef oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c01"/>
+                        <kind>entitlement</kind>
+                        <objectclass>ri:GroupObjectClass</objectclass>
+                    </resourceObjects>
+                </liveSynchronization>
+            </work>
+        </activity>
+    </task>
+
+    <task oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c13">
+        <name>Straza LiveSync - tool</name>
+        <objectRef oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c01" type="ResourceType"/>
+        <executionState>runnable</executionState>
+        <schedule><interval>10</interval></schedule>
+        <activity>
+            <work>
+                <liveSynchronization>
+                    <resourceObjects>
+                        <resourceRef oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c01"/>
+                        <kind>entitlement</kind>
+                        <intent>tool</intent>
+                        <objectclass>ri:CustomtoolObjectClass</objectclass>
+                    </resourceObjects>
+                </liveSynchronization>
+            </work>
+        </activity>
+    </task>
+
+</objects>

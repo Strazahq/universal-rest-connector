@@ -1,0 +1,26 @@
+universal-rest-connector
+Copyright 2026 Patrik Rovňak.
+Published by SynapTech s. r. o. under an exclusive license from Patrik Rovňak.
+Licensed under the Apache License, Version 2.0. SynapTech s. r. o. grants this
+license in its own name and on behalf of the author.
+
+The connector JAR bundles the following libraries under lib/. Each JAR keeps
+its own license and notice files.
+
+jackson-databind 2.19.4
+  Copyright 2007-, Tatu Saloranta (tatu.saloranta@iki.fi)
+  Licensed under the Apache License, Version 2.0.
+
+jackson-core 2.19.4
+  Copyright 2007-, Tatu Saloranta (tatu.saloranta@iki.fi)
+  Licensed under the Apache License, Version 2.0.
+  Includes a shaded copy of FastDoubleParser, Copyright 2023 Werner
+  Randelshofer, Switzerland, licensed under the MIT License.
+
+jackson-annotations 2.19.4
+  Copyright 2007-, Tatu Saloranta (tatu.saloranta@iki.fi)
+  Licensed under the Apache License, Version 2.0.
+
+connector-common 1.5.2.0
+  Copyright (C) 2010-2022 Evolveum
+  Licensed under the Apache License, Version 2.0.

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Straza role metarole. Every imported Straza role holds it, so assigning an
+  imported role to a user writes the wire-group membership through the order-2
+  construction below.
+-->
+<role xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
+      xmlns:ri="http://midpoint.evolveum.com/xml/ns/public/resource/instance-3"
+      xmlns:s="http://midpoint.evolveum.com/xml/ns/public/model/scripting-3"
+      oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c0a">
+    <name>Straza role metarole</name>
+    <description>Held by every imported Straza role. Assigning an imported
+        role to a user provisions the governed Straza account with wire-group
+        membership, which IS the Straza role assignment.</description>
+    <!-- Recomputes members with reconcile whenever an imported role is added or
+         changed, so membership computed before the role's shadow was linked is replayed. -->
+    <inducement>
+        <policyRule>
+            <name>replay-membership-on-imported-role-change</name>
+            <policyConstraints>
+                <modification>
+                    <operation>add</operation>
+                    <operation>modify</operation>
+                </modification>
+            </policyConstraints>
+            <policyActions>
+                <scriptExecution>
+                    <object>
+                        <linkSource/>
+                    </object>
+                    <executeScript>
+                        <s:recompute>
+                            <s:executeOptions>
+                                <reconcile>true</reconcile>
+                            </s:executeOptions>
+                        </s:recompute>
+                    </executeScript>
+                    <asynchronousExecution>
+                        <executionMode>iterative</executionMode>
+                    </asynchronousExecution>
+                </scriptExecution>
+            </policyActions>
+        </policyRule>
+    </inducement>
+    <inducement>
+        <focusType>UserType</focusType>
+        <order>2</order>
+        <construction>
+            <resourceRef oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c01" type="ResourceType"/>
+            <kind>account</kind>
+            <intent>default</intent>
+            <association>
+                <ref>ri:strazaGroups</ref>
+                <outbound>
+                    <expression>
+                        <associationFromLink/>
+                    </expression>
+                </outbound>
+            </association>
+        </construction>
+    </inducement>
+</role>

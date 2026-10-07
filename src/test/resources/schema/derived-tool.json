@@ -1,0 +1,23 @@
+{
+  "//": "Test schema file: an app class and a tool class derived from its tools array.",
+  "objects": [
+    {
+      "objectClass": "app",
+      "listEndpoint": "/v1/admin/apps",
+      "icfsUid": "id",
+      "icfsName": "name",
+      "attributes": {
+        "tools": { "multivalued": true }
+      }
+    },
+    {
+      "objectClass": "tool",
+      "derivedFrom": {
+        "objectClass": "app",
+        "arrayField": "tools",
+        "parentRef": "app",
+        "parentRefValue": "name"
+      }
+    }
+  ]
+}

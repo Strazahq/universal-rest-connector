@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0
+          http://maven.apache.org/xsd/assembly-1.1.0.xsd">
+
+    <id>connector</id>
+
+    <formats>
+        <format>jar</format>
+    </formats>
+
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>target/classes</directory>
+            <outputDirectory></outputDirectory>
+            <!-- outputDirectory must be the archive root for a ConnId bundle -->
+        </fileSet>
+    </fileSets>
+
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>lib</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <scope>runtime</scope>
+            <excludes>
+                <!-- midPoint provides the ConnId framework; bundling it would load
+                     the same classes under two classloaders. -->
+                <exclude>net.tirasa.connid:connector-framework</exclude>
+            </excludes>
+        </dependencySet>
+    </dependencySets>
+</assembly>

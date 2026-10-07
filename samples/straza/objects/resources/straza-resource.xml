@@ -1,0 +1,654 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Straza resource for midPoint 4.10 on universal-rest-connector.
+  Accounts and role membership are written over SCIM; apps, tools and roles
+  are pulled read-only and kept current by LiveSync. Set baseUrl, the apiToken
+  clear value and schemaFilePath before import. Mappings into extension/ext:*
+  need the extension items listed in ../../README.md.
+-->
+<resource oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c01"
+          xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
+          xmlns:c="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
+          xmlns:icfs="http://midpoint.evolveum.com/xml/ns/public/connector/icf-1/resource-schema-3"
+          xmlns:icfc="http://midpoint.evolveum.com/xml/ns/public/connector/icf-1/connector-schema-3"
+          xmlns:ri="http://midpoint.evolveum.com/xml/ns/public/resource/instance-3"
+          xmlns:ext="http://straza.example.com/xml/ns/straza-extension"
+          xmlns:q="http://prism.evolveum.com/xml/ns/public/query-3">
+
+    <name>Straza</name>
+    <description>
+        The Straza governance plane, one resource: users mastered by midPoint
+        over SCIM (deactivation is the kill switch: active=false revokes
+        every session in seconds; DELETE deactivates, never purges), roles
+        imported as wire-groups whose membership IS role assignment, and
+        apps/tools pulled read-only as certifiable entitlements.
+    </description>
+
+    <connectorRef type="ConnectorType">
+        <filter>
+            <q:equal>
+                <q:path>connectorType</q:path>
+                <q:value>ai.straza.connector.rest.UniversalRestConnector</q:value>
+            </q:equal>
+        </filter>
+    </connectorRef>
+
+    <connectorConfiguration>
+        <icfc:configurationProperties
+                xmlns:cfg="http://midpoint.evolveum.com/xml/ns/public/connector/icf-1/bundle/ai.straza.universal-rest-connector/ai.straza.connector.rest.UniversalRestConnector">
+            <cfg:baseUrl>https://straza.example.com</cfg:baseUrl>
+            <!-- Admin API token whose scope covers every class (see README.md). -->
+            <cfg:apiToken>
+                <clearValue>REPLACE_WITH_ADMIN_API_TOKEN</clearValue>
+            </cfg:apiToken>
+            <cfg:emitAgenticUrn>true</cfg:emitAgenticUrn>
+            <cfg:schemaFilePath>/opt/midpoint/var/straza/straza-schema.json</cfg:schemaFilePath>
+            <cfg:testEndpoint>/v1/admin/overview</cfg:testEndpoint>
+        </icfc:configurationProperties>
+    </connectorConfiguration>
+
+    <schemaHandling>
+
+        <!-- Account: midPoint masters users in Straza over SCIM and reads back kind and origin. -->
+        <objectType>
+            <kind>account</kind>
+            <intent>default</intent>
+            <displayName>Straza user</displayName>
+            <default>true</default>
+            <objectClass>ri:AccountObjectClass</objectClass>
+            <attribute>
+                <ref>icfs:name</ref>
+                <displayName>Username</displayName>
+                <outbound>
+                    <strength>strong</strength>
+                    <source><path>$user/name</path></source>
+                </outbound>
+                <inbound>
+                    <name>straza-user-name</name>
+                    <strength>weak</strength>
+                    <evaluationPhases>
+                        <include>beforeCorrelation</include>
+                    </evaluationPhases>
+                    <target><path>name</path></target>
+                </inbound>
+            </attribute>
+            <attribute>
+                <ref>ri:displayName</ref>
+                <outbound>
+                    <source><path>$user/fullName</path></source>
+                </outbound>
+            </attribute>
+            <attribute>
+                <ref>ri:title</ref>
+                <outbound>
+                    <source><path>$user/title</path></source>
+                </outbound>
+            </attribute>
+            <attribute>
+                <ref>ri:email</ref>
+                <outbound>
+                    <source><path>$user/emailAddress</path></source>
+                </outbound>
+            </attribute>
+            <!-- Typing: copies of the focus extension. -->
+            <attribute>
+                <ref>ri:userType</ref>
+                <outbound>
+                    <strength>strong</strength>
+                    <source><path>$user/extension/ext:strazaUserType</path></source>
+                </outbound>
+            </attribute>
+            <attribute>
+                <ref>ri:agencyMode</ref>
+                <outbound>
+                    <strength>strong</strength>
+                    <source><path>$user/extension/ext:strazaAgencyMode</path></source>
+                </outbound>
+            </attribute>
+            <attribute>
+                <ref>ri:sponsor</ref>
+                <outbound>
+                    <strength>strong</strength>
+                    <source><path>$user/extension/ext:strazaSponsor</path></source>
+                </outbound>
+            </attribute>
+            <attribute>
+                <ref>ri:swarmId</ref>
+                <outbound>
+                    <strength>strong</strength>
+                    <source><path>$user/extension/ext:strazaSwarmId</path></source>
+                </outbound>
+            </attribute>
+            <!-- Only agents with a pinned IdP subject carry ext:strazaExternalId;
+                 humans keep the externalId Straza assigns at first login. -->
+            <attribute>
+                <ref>ri:externalId</ref>
+                <outbound>
+                    <strength>strong</strength>
+                    <source><path>$user/extension/ext:strazaExternalId</path></source>
+                    <condition>
+                        <script><code>strazaExternalId != null</code></script>
+                    </condition>
+                </outbound>
+            </attribute>
+            <attribute>
+                <ref>ri:kind</ref>
+                <inbound>
+                    <name>straza-user-persona</name>
+                    <strength>strong</strength>
+                    <target><path>extension/ext:strazaPersona</path></target>
+                </inbound>
+            </attribute>
+            <attribute>
+                <ref>ri:origin</ref>
+                <inbound>
+                    <name>straza-user-origin</name>
+                    <strength>strong</strength>
+                    <target><path>extension/ext:strazaOrigin</path></target>
+                </inbound>
+            </attribute>
+            <attribute>
+                <ref>ri:groups</ref>
+                <displayName>Groups (raw)</displayName>
+            </attribute>
+            <!-- Disabling the user sets SCIM active=false, which revokes its Straza sessions. -->
+            <activation>
+                <existence><outbound/></existence>
+                <administrativeStatus><outbound/></administrativeStatus>
+            </activation>
+            <correlation>
+                <correlators>
+                    <items>
+                        <name>by-username</name>
+                        <item><ref>name</ref></item>
+                    </items>
+                </correlators>
+            </correlation>
+            <synchronization>
+                <reaction>
+                    <situation>linked</situation>
+                    <actions><synchronize/></actions>
+                </reaction>
+                <reaction>
+                    <situation>unlinked</situation>
+                    <actions><link/></actions>
+                </reaction>
+                <reaction>
+                    <situation>deleted</situation>
+                    <actions><unlink/></actions>
+                </reaction>
+                <!-- No unmatched reaction: creating the user here would provision it straight back. -->
+            </synchronization>
+        </objectType>
+
+        <!-- App: each MCP server becomes a service named MCS:<app>. -->
+        <objectType>
+            <kind>entitlement</kind>
+            <intent>app</intent>
+            <displayName>Straza app</displayName>
+            <objectClass>ri:CustomappObjectClass</objectClass>
+            <focus>
+                <type>c:ServiceType</type>
+            </focus>
+            <attribute>
+                <ref>icfs:name</ref>
+                <displayName>App</displayName>
+                <inbound>
+                    <name>straza-app-name</name>
+                    <strength>strong</strength>
+                    <evaluationPhases>
+                        <include>beforeCorrelation</include>
+                    </evaluationPhases>
+                    <expression>
+                        <script>
+                            <code><![CDATA[
+// Naming convention: MCS = MCP Server, catalog-materialized.
+input != null ? 'MCS:' + input : null
+                            ]]></code>
+                        </script>
+                    </expression>
+                    <target>
+                        <path>name</path>
+                    </target>
+                </inbound>
+                <inbound>
+                    <name>straza-app-description</name>
+                    <strength>weak</strength>
+                    <expression>
+                        <value>MCP server governed by Straza; materialized read-only from the catalog.</value>
+                    </expression>
+                    <target>
+                        <path>description</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <attribute>
+                <ref>ri:version</ref>
+                <inbound>
+                    <strength>strong</strength>
+                    <target>
+                        <path>extension/ext:strazaVersion</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <attribute>
+                <ref>ri:runtime</ref>
+                <inbound>
+                    <strength>strong</strength>
+                    <target>
+                        <path>extension/ext:strazaRuntime</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <attribute>
+                <ref>ri:status</ref>
+                <inbound>
+                    <strength>strong</strength>
+                    <target>
+                        <path>extension/ext:strazaStatus</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <attribute>
+                <ref>ri:source</ref>
+                <inbound>
+                    <strength>strong</strength>
+                    <target>
+                        <path>extension/ext:strazaSource</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <attribute><ref>ri:tools</ref></attribute>
+            <correlation>
+                <correlators>
+                    <items>
+                        <name>by-app-name</name>
+                        <item>
+                            <ref>name</ref>
+                        </item>
+                    </items>
+                </correlators>
+            </correlation>
+            <synchronization>
+                <reaction>
+                    <situation>linked</situation>
+                    <actions>
+                        <synchronize/>
+                    </actions>
+                </reaction>
+                <reaction>
+                    <situation>unlinked</situation>
+                    <actions>
+                        <link/>
+                    </actions>
+                </reaction>
+                <reaction>
+                    <situation>unmatched</situation>
+                    <actions>
+                        <addFocus/>
+                    </actions>
+                </reaction>
+                <reaction>
+                    <situation>deleted</situation>
+                    <actions>
+                        <deleteFocus/>
+                    </actions>
+                </reaction>
+            </synchronization>
+        </objectType>
+
+        <!-- Tool: each MCP tool becomes a role named MCT:<app:tool>. -->
+        <objectType>
+            <kind>entitlement</kind>
+            <intent>tool</intent>
+            <displayName>Straza tool</displayName>
+            <objectClass>ri:CustomtoolObjectClass</objectClass>
+            <focus>
+                <type>c:RoleType</type>
+            </focus>
+            <attribute>
+                <ref>icfs:name</ref>
+                <displayName>Tool</displayName>
+                <inbound>
+                    <name>straza-tool-composite-name</name>
+                    <strength>strong</strength>
+                    <evaluationPhases>
+                        <include>beforeCorrelation</include>
+                    </evaluationPhases>
+                    <expression>
+                        <script>
+                            <code><![CDATA[
+// Naming convention: MCT = MCP Tool role, catalog-materialized. The input is
+// already app:tool, so the app lineage stays in the name without a second
+// copy, and tools group per app in sorted lists.
+input != null ? 'MCT:' + input : null
+                            ]]></code>
+                        </script>
+                    </expression>
+                    <target>
+                        <path>name</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <attribute>
+                <ref>ri:app</ref>
+                <displayName>App</displayName>
+                <inbound>
+                    <name>straza-tool-lineage</name>
+                    <strength>strong</strength>
+                    <target>
+                        <path>extension/ext:strazaApp</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <attribute>
+                <ref>ri:description</ref>
+                <displayName>Description</displayName>
+                <inbound>
+                    <name>straza-tool-description</name>
+                    <strength>strong</strength>
+                    <source>
+                        <path>$shadow/attributes/ri:app</path>
+                    </source>
+                    <expression>
+                        <script>
+                            <code><![CDATA[
+if (input != null && !input.toString().trim().isEmpty()) { return input.toString() }
+app != null ? 'MCP tool exposed by MCP server "' + app + '"; materialized read-only from the Straza catalog.' : 'MCP tool from the Straza catalog.'
+                            ]]></code>
+                        </script>
+                    </expression>
+                    <target>
+                        <path>description</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <correlation>
+                <correlators>
+                    <items>
+                        <name>by-composite-name</name>
+                        <item>
+                            <ref>name</ref>
+                        </item>
+                    </items>
+                </correlators>
+            </correlation>
+            <synchronization>
+                <reaction>
+                    <situation>linked</situation>
+                    <actions>
+                        <synchronize/>
+                    </actions>
+                </reaction>
+                <reaction>
+                    <situation>unlinked</situation>
+                    <actions>
+                        <link/>
+                    </actions>
+                </reaction>
+                <reaction>
+                    <situation>unmatched</situation>
+                    <actions>
+                        <addFocus/>
+                    </actions>
+                </reaction>
+                <reaction>
+                    <situation>deleted</situation>
+                    <actions>
+                        <deleteFocus/>
+                    </actions>
+                </reaction>
+            </synchronization>
+        </objectType>
+
+        <!-- Role: each Straza role becomes a role named BR:<role> (business) or AR:<role>
+             that holds the Straza role metarole. Only ri:members is written, and it is
+             the Straza role assignment. -->
+        <objectType>
+            <kind>entitlement</kind>
+            <intent>group</intent>
+            <displayName>Straza role</displayName>
+            <default>true</default>
+            <delineation>
+                <objectClass>ri:GroupObjectClass</objectClass>
+            </delineation>
+            <focus>
+                <type>c:RoleType</type>
+            </focus>
+            <attribute>
+                <ref>icfs:name</ref>
+                <displayName>Role</displayName>
+                <inbound>
+                    <name>straza-wire-role-name</name>
+                    <strength>strong</strength>
+                    <evaluationPhases>
+                        <include>beforeCorrelation</include>
+                    </evaluationPhases>
+                    <expression>
+                        <script>
+                            <code><![CDATA[
+// Naming: BR: for a Straza business role, AR: for every other kind.
+// The kind is read off the same resource object the name comes from.
+if (input == null) { return null }
+def obj = binding.hasVariable('projection') ? projection : (binding.hasVariable('shadow') ? shadow : null)
+def kind = obj != null ? basic.getAttributeValue(obj, 'roleKind') : null
+return (kind == 'business' ? 'BR:' : 'AR:') + input
+                            ]]></code>
+                        </script>
+                    </expression>
+                    <target>
+                        <path>name</path>
+                    </target>
+                </inbound>
+                <inbound>
+                    <name>straza-wire-role-metarole</name>
+                    <strength>strong</strength>
+                    <expression>
+                        <assignmentTargetSearch>
+                            <targetType>c:RoleType</targetType>
+                            <filter>
+                                <q:equal>
+                                    <q:path>name</q:path>
+                                    <q:value>Straza role metarole</q:value>
+                                </q:equal>
+                            </filter>
+                        </assignmentTargetSearch>
+                    </expression>
+                    <target>
+                        <path>assignment</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <!-- No inbound: membership is written per user through the account association. -->
+            <attribute>
+                <ref>ri:members</ref>
+                <displayName>Members</displayName>
+            </attribute>
+            <attribute>
+                <ref>ri:role</ref>
+                <displayName>Role (raw)</displayName>
+            </attribute>
+            <attribute>
+                <ref>ri:roleKind</ref>
+                <displayName>Kind</displayName>
+                <inbound>
+                    <name>straza-wire-role-kind</name>
+                    <strength>strong</strength>
+                    <target>
+                        <path>extension/ext:strazaKind</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <attribute>
+                <ref>ri:plane</ref>
+                <displayName>Plane</displayName>
+            </attribute>
+            <attribute>
+                <ref>ri:server</ref>
+                <displayName>Owning MCP server</displayName>
+                <inbound>
+                    <name>straza-wire-role-server</name>
+                    <strength>strong</strength>
+                    <target>
+                        <path>extension/ext:strazaServer</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <attribute>
+                <ref>ri:administers</ref>
+                <displayName>Administers</displayName>
+                <inbound>
+                    <name>straza-wire-role-administers</name>
+                    <strength>strong</strength>
+                    <target>
+                        <path>extension/ext:strazaAdministers</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <attribute>
+                <ref>ri:description</ref>
+                <displayName>Description</displayName>
+                <inbound>
+                    <name>straza-wire-role-description</name>
+                    <strength>strong</strength>
+                    <target>
+                        <path>description</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <attribute>
+                <ref>ri:apps</ref>
+                <displayName>Apps granted</displayName>
+            </attribute>
+            <attribute>
+                <ref>ri:tools</ref>
+                <displayName>Tools granted</displayName>
+            </attribute>
+            <attribute>
+                <ref>ri:policies</ref>
+                <displayName>PolicySets</displayName>
+            </attribute>
+            <correlation>
+                <correlators>
+                    <items>
+                        <name>by-role-name</name>
+                        <item>
+                            <ref>name</ref>
+                        </item>
+                    </items>
+                </correlators>
+            </correlation>
+            <synchronization>
+                <reaction>
+                    <situation>linked</situation>
+                    <actions>
+                        <synchronize/>
+                    </actions>
+                </reaction>
+                <reaction>
+                    <situation>unlinked</situation>
+                    <actions>
+                        <link/>
+                    </actions>
+                </reaction>
+                <reaction>
+                    <situation>unmatched</situation>
+                    <actions>
+                        <addFocus/>
+                    </actions>
+                </reaction>
+                <reaction>
+                    <situation>deleted</situation>
+                    <actions>
+                        <deleteFocus/>
+                    </actions>
+                </reaction>
+            </synchronization>
+        </objectType>
+
+        <!-- Account membership in roles, written by the metarole construction. -->
+        <associationType>
+            <name>strazaRoleMembership</name>
+            <subject>
+                <objectType>
+                    <kind>account</kind>
+                    <intent>default</intent>
+                </objectType>
+                <association>
+                    <ref>ri:strazaGroups</ref>
+                    <tolerant>true</tolerant>
+                </association>
+            </subject>
+            <object>
+                <objectType>
+                    <kind>entitlement</kind>
+                    <intent>group</intent>
+                </objectType>
+            </object>
+        </associationType>
+        <!-- The apps a role grants, read-only evidence. -->
+        <associationType>
+            <name>strazaAppGrant</name>
+            <subject>
+                <objectType>
+                    <kind>entitlement</kind>
+                    <intent>group</intent>
+                </objectType>
+                <association>
+                    <ref>ri:grantedApp</ref>
+                </association>
+            </subject>
+            <object>
+                <objectType>
+                    <kind>entitlement</kind>
+                    <intent>app</intent>
+                </objectType>
+            </object>
+        </associationType>
+
+    </schemaHandling>
+
+    <!-- Simulated reference types behind the association types: the connector
+         exposes members and apps as plain multivalued strings. -->
+    <capabilities>
+        <configured xmlns:cap="http://midpoint.evolveum.com/xml/ns/public/resource/capabilities-3">
+            <cap:references>
+                <cap:type>
+                    <cap:name>ri:strazaRoleMembership</cap:name>
+                    <cap:subject>
+                        <cap:delineation>
+                            <cap:objectClass>ri:AccountObjectClass</cap:objectClass>
+                        </cap:delineation>
+                        <cap:primaryBindingAttributeRef>icfs:uid</cap:primaryBindingAttributeRef>
+                        <cap:localItemName>ri:strazaGroups</cap:localItemName>
+                    </cap:subject>
+                    <cap:object>
+                        <cap:delineation>
+                            <cap:objectClass>ri:GroupObjectClass</cap:objectClass>
+                        </cap:delineation>
+                        <cap:primaryBindingAttributeRef>ri:members</cap:primaryBindingAttributeRef>
+                    </cap:object>
+                    <cap:direction>objectToSubject</cap:direction>
+                    <cap:explicitReferentialIntegrity>true</cap:explicitReferentialIntegrity>
+                </cap:type>
+                <cap:type>
+                    <cap:name>ri:strazaAppGrant</cap:name>
+                    <cap:subject>
+                        <cap:delineation>
+                            <cap:objectClass>ri:GroupObjectClass</cap:objectClass>
+                        </cap:delineation>
+                        <cap:primaryBindingAttributeRef>ri:apps</cap:primaryBindingAttributeRef>
+                        <cap:localItemName>ri:grantedApp</cap:localItemName>
+                    </cap:subject>
+                    <cap:object>
+                        <cap:delineation>
+                            <cap:objectClass>ri:CustomappObjectClass</cap:objectClass>
+                        </cap:delineation>
+                        <cap:primaryBindingAttributeRef>icfs:name</cap:primaryBindingAttributeRef>
+                    </cap:object>
+                    <cap:direction>subjectToObject</cap:direction>
+                </cap:type>
+            </cap:references>
+        </configured>
+    </capabilities>
+</resource>

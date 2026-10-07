@@ -1,0 +1,25 @@
+{
+  "//": "A scim class whose namespaced attributes clear by omission, for the replace document tests.",
+  "objects": [
+    {
+      "objectClass": "widget",
+      "dialect": "scim",
+      "basePath": "/api",
+      "coreSchema": "urn:example:2.0:Widget",
+      "namespaces": { "ext": "urn:example:2.0:WidgetExtension" },
+      "icfsUid": "id",
+      "icfsName": "name",
+      "operations": ["search", "update"],
+      "endpoints": {
+        "list": "/Widgets",
+        "byId": "/Widgets/{id}",
+        "replace": "/Widgets/{id}"
+      },
+      "attributes": {
+        "__NAME__": { "creatable": true, "updateable": true },
+        "label": { "path": "ext:label", "creatable": true, "updateable": true },
+        "note": { "path": "ext:note", "creatable": true, "updateable": true }
+      }
+    }
+  ]
+}
