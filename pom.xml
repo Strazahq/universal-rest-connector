@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.evolveum.polygon</groupId>
         <artifactId>connector-parent</artifactId>
-        <version>1.5.2.0</version>
+        <version>3.0.1</version>
     </parent>
 
     <groupId>ai.straza</groupId>
