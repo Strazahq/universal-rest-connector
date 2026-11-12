@@ -29,23 +29,6 @@
       }
     },
     {
-      "objectClass": "tool",
-      "listEndpoint": "/v1/admin/tools",
-      "icfsUid": "id",
-      "icfsName": "id",
-      "attributes": {
-        "app": {},
-        "app_id": {},
-        "description": {}
-      },
-      "//note": "The id is app:tool, unique across apps, so it is both uid and name.",
-      "//syncNote": "A tool event re-emits every tool; reconciliation removes deleted tools.",
-      "sync": {
-        "requestTypes": ["tool"],
-        "reemitAll": ["tool"]
-      }
-    },
-    {
       "objectClass": "user",
       "listEndpoint": "/v1/admin/users",
       "icfsUid": "id",
@@ -160,7 +143,7 @@
       "filters": { "pushable": { "__NAME__": "displayName" } },
       "attributes": {
         "members": { "path": "members[].value", "multivalued": true, "creatable": true, "updateable": true },
-        "//projection": "Read-only role details; apps lists the role's apps.",
+        "//projection": "Read-only role details; apps lists the role's apps, and covers says which objects the role reaches on a server that limits roles to some.",
         "role": { "path": "ext:role" },
         "roleKind": { "path": "ext:roleKind" },
         "plane": { "path": "ext:plane" },
@@ -169,6 +152,7 @@
         "tools": { "path": "ext:tools", "multivalued": true },
         "policies": { "path": "ext:policies", "multivalued": true },
         "administers": { "path": "ext:administers", "multivalued": true },
+        "covers": { "path": "ext:covers", "multivalued": true },
         "server": { "path": "ext:server" }
       },
       "//syncNote": "Role and membership changes emit role events; a binding change re-emits every role.",

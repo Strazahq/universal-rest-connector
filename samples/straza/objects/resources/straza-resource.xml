@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Straza resource for midPoint 4.10 on universal-rest-connector.
-  Accounts and role membership are written over SCIM; apps, tools and roles
+  Accounts and role membership are written over SCIM; apps and roles
   are pulled read-only and kept current by LiveSync. Set baseUrl, the apiToken
   clear value and schemaFilePath before import. Mappings into extension/ext:*
   need the extension items listed in ../../README.md.
@@ -21,7 +21,7 @@
         over SCIM (deactivation is the kill switch: active=false revokes
         every session in seconds; DELETE deactivates, never purges), roles
         imported as wire-groups whose membership IS role assignment, and
-        apps/tools pulled read-only as certifiable entitlements.
+        apps pulled read-only as certifiable entitlements.
     </description>
 
     <connectorRef type="ConnectorType">
@@ -297,110 +297,6 @@ input != null ? 'MCS:' + input : null
             </synchronization>
         </objectType>
 
-        <!-- Tool: each MCP tool becomes a role named MCT:<app:tool>. -->
-        <objectType>
-            <kind>entitlement</kind>
-            <intent>tool</intent>
-            <displayName>Straza tool</displayName>
-            <objectClass>ri:CustomtoolObjectClass</objectClass>
-            <focus>
-                <type>c:RoleType</type>
-            </focus>
-            <attribute>
-                <ref>icfs:name</ref>
-                <displayName>Tool</displayName>
-                <inbound>
-                    <name>straza-tool-composite-name</name>
-                    <strength>strong</strength>
-                    <evaluationPhases>
-                        <include>beforeCorrelation</include>
-                    </evaluationPhases>
-                    <expression>
-                        <script>
-                            <code><![CDATA[
-// Naming convention: MCT = MCP Tool role, catalog-materialized. The input is
-// already app:tool, so the app lineage stays in the name without a second
-// copy, and tools group per app in sorted lists.
-input != null ? 'MCT:' + input : null
-                            ]]></code>
-                        </script>
-                    </expression>
-                    <target>
-                        <path>name</path>
-                    </target>
-                </inbound>
-            </attribute>
-            <attribute>
-                <ref>ri:app</ref>
-                <displayName>App</displayName>
-                <inbound>
-                    <name>straza-tool-lineage</name>
-                    <strength>strong</strength>
-                    <target>
-                        <path>extension/ext:strazaApp</path>
-                    </target>
-                </inbound>
-            </attribute>
-            <attribute>
-                <ref>ri:description</ref>
-                <displayName>Description</displayName>
-                <inbound>
-                    <name>straza-tool-description</name>
-                    <strength>strong</strength>
-                    <source>
-                        <path>$shadow/attributes/ri:app</path>
-                    </source>
-                    <expression>
-                        <script>
-                            <code><![CDATA[
-if (input != null && !input.toString().trim().isEmpty()) { return input.toString() }
-app != null ? 'MCP tool exposed by MCP server "' + app + '"; materialized read-only from the Straza catalog.' : 'MCP tool from the Straza catalog.'
-                            ]]></code>
-                        </script>
-                    </expression>
-                    <target>
-                        <path>description</path>
-                    </target>
-                </inbound>
-            </attribute>
-            <correlation>
-                <correlators>
-                    <items>
-                        <name>by-composite-name</name>
-                        <item>
-                            <ref>name</ref>
-                        </item>
-                    </items>
-                </correlators>
-            </correlation>
-            <synchronization>
-                <reaction>
-                    <situation>linked</situation>
-                    <actions>
-                        <synchronize/>
-                    </actions>
-                </reaction>
-                <reaction>
-                    <situation>unlinked</situation>
-                    <actions>
-                        <link/>
-                    </actions>
-                </reaction>
-                <reaction>
-                    <situation>unmatched</situation>
-                    <actions>
-                        <addFocus/>
-                    </actions>
-                </reaction>
-                <reaction>
-                    <situation>deleted</situation>
-                    <actions>
-                        <deleteFocus/>
-                    </actions>
-                </reaction>
-            </synchronization>
-        </objectType>
-
         <!-- Role: each Straza role becomes a role named BR:<role> (business) or AR:<role>
              that holds the Straza role metarole. Only ri:members is written, and it is
              the Straza role assignment. -->
@@ -523,6 +419,19 @@ return (kind == 'business' ? 'BR:' : 'AR:') + input
             <attribute>
                 <ref>ri:tools</ref>
                 <displayName>Tools granted</displayName>
+            </attribute>
+            <attribute>
+                <ref>ri:covers</ref>
+                <displayName>Covers</displayName>
+                <!-- Which objects the role reaches on each server that limits roles to
+                     some: one value per named object, or one for every or none. -->
+                <inbound>
+                    <name>straza-wire-role-covers</name>
+                    <strength>strong</strength>
+                    <target>
+                        <path>extension/ext:strazaCovers</path>
+                    </target>
+                </inbound>
             </attribute>
             <attribute>
                 <ref>ri:policies</ref>

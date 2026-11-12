@@ -25,8 +25,17 @@ public final class TestSchemas {
     private TestSchemas() {
     }
 
-    /** The shipped sample mapping, read from the checkout. */
+    /**
+     * The Straza mapping the unit tests exercise: the sample as release 0.1.0 shipped it. It still
+     * declares the tool list class, which Straza's own configuration has since dropped, and the
+     * tests keep it because that class covers a read-only list that is re-emitted on a change.
+     */
     public static String sample() {
+        return copy("straza-with-tools");
+    }
+
+    /** The sample mapping that ships in samples/straza, read from the checkout. */
+    public static String shipped() {
         return Path.of("samples/straza/straza-schema.json").toAbsolutePath().toString();
     }
 

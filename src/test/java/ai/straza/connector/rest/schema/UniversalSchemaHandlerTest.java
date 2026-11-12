@@ -19,12 +19,19 @@ import static org.testng.Assert.assertTrue;
 @Test(groups = "unit")
 public class UniversalSchemaHandlerTest {
 
-    private static String shippedSample() {
-        return Path.of("samples/straza/straza-schema.json").toAbsolutePath().toString();
+    private static String sample() {
+        return TestSchemas.sample();
     }
 
-    public void parsesShippedSample() {
-        UniversalSchemaHandler handler = new UniversalSchemaHandler(shippedSample());
+    /** The mapping in samples/straza is the one Straza ships now: it loads, and it has no tool class. */
+    public void parsesShippedStrazaSample() {
+        Map<String, SchemaType> types = new UniversalSchemaHandler(TestSchemas.shipped()).getSchemaTypes();
+        assertTrue(types.keySet().containsAll(java.util.Set.of("app", "user")));
+        assertTrue(!types.containsKey("tool"));
+    }
+
+    public void parsesSample() {
+        UniversalSchemaHandler handler = new UniversalSchemaHandler(sample());
         Map<String, SchemaType> types = handler.getSchemaTypes();
         assertTrue(types.keySet().containsAll(java.util.Set.of("app", "tool", "user")));
         // Roles are modelled by __GROUP__ only.
@@ -80,7 +87,7 @@ public class UniversalSchemaHandlerTest {
     }
 
     public void parsesAssociationsFromSample() {
-        UniversalSchemaHandler handler = new UniversalSchemaHandler(shippedSample());
+        UniversalSchemaHandler handler = new UniversalSchemaHandler(sample());
 
         SchemaType user = handler.getSchemaTypes().get("user");
         assertEquals(user.getAssociations().size(), 1);
@@ -105,7 +112,7 @@ public class UniversalSchemaHandlerTest {
     }
 
     public void parsesSyncFeedConfigWithDefaults() {
-        UniversalSchemaHandler handler = new UniversalSchemaHandler(shippedSample());
+        UniversalSchemaHandler handler = new UniversalSchemaHandler(sample());
         SyncFeedConfig feed = handler.getSyncFeedConfig();
         assertNotNull(feed);
         assertEquals(feed.getFeedEndpoint(), "/v1/admin/changes");
@@ -118,7 +125,7 @@ public class UniversalSchemaHandlerTest {
     }
 
     public void parsesPerObjectClassSyncRouting() {
-        UniversalSchemaHandler handler = new UniversalSchemaHandler(shippedSample());
+        UniversalSchemaHandler handler = new UniversalSchemaHandler(sample());
 
         SyncType user = handler.getSchemaTypes().get("user").getSyncType();
         assertNotNull(user);

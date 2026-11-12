@@ -62,23 +62,4 @@
         </activity>
     </task>
 
-    <task oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c13">
-        <name>Straza LiveSync - tool</name>
-        <objectRef oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c01" type="ResourceType"/>
-        <executionState>runnable</executionState>
-        <schedule><interval>10</interval></schedule>
-        <activity>
-            <work>
-                <liveSynchronization>
-                    <resourceObjects>
-                        <resourceRef oid="b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1c01"/>
-                        <kind>entitlement</kind>
-                        <intent>tool</intent>
-                        <objectclass>ri:CustomtoolObjectClass</objectclass>
-                    </resourceObjects>
-                </liveSynchronization>
-            </work>
-        </activity>
-    </task>
-
 </objects>
