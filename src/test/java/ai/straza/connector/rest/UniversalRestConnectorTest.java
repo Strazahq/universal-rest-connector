@@ -2,7 +2,6 @@ package ai.straza.connector.rest;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -63,7 +62,7 @@ public class UniversalRestConnectorTest {
     }
 
     private static String sampleSchemaPath() {
-        return Path.of("samples/straza/straza-schema.json").toAbsolutePath().toString();
+        return TestSchemas.sample();
     }
 
     private UniversalRestConnector connector(String baseUrl, String token, String testEndpoint) {

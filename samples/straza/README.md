@@ -4,9 +4,13 @@ A complete midPoint configuration for [Straza](https://straza.ai) on
 universal-rest-connector: the connector's schema file and the midPoint objects
 that use it.
 
+The same files run in the demo stack of the
+[Straza repository](https://github.com/Strazahq/straza/tree/main/deploy/compose/eval-stack/midpoint),
+and they change there first. This copy follows Straza 2.1.
+
 | Component | Version |
 |---|---|
-| Straza | 1.1 or later |
+| Straza | 2.0 or later |
 | midPoint | 4.10.3, Java 21 |
 | universal-rest-connector | 0.1.0 |
 
@@ -21,8 +25,9 @@ that use it.
   `BR:<role>` (business roles) or `AR:<role>` (every other kind). Assigning one
   to a user writes the Straza role membership through the Straza role
   metarole. Roles are created, deleted and renamed in Straza.
-- **Apps and tools:** every MCP server is imported as a service named
-  `MCS:<app>` and every tool as a role named `MCT:<app:tool>`, read-only.
+- **Apps:** every MCP server is imported as a service named `MCS:<app>`,
+  read-only. A role's tools, and the objects it covers on a server that limits
+  roles to some, are read as attributes of the role.
 - **Synchronization:** LiveSync tasks follow the Straza change feed. Straza
   accounts without a matching midPoint user are left unlinked, so they are
   never provisioned back.
@@ -49,14 +54,13 @@ that use it.
 4. Define the extension items below, or remove the mappings that use them.
 5. Import the resource, then the roles, and test the resource connection.
 6. LiveSync starts from now, so import the existing objects once: run an
-   import for each object type of the resource (accounts, apps, tools, roles).
+   import for each object type of the resource (accounts, apps, roles).
 7. Import the LiveSync tasks.
 
 The objects use fixed OIDs (`b6f9f2c8-0d5a-4e77-9a1e-9d3c0e5a1cXX`) and refer
 to each other by them; change them together if they collide with yours.
 midPoint names the object classes `ri:AccountObjectClass`,
-`ri:GroupObjectClass`, `ri:CustomappObjectClass` and
-`ri:CustomtoolObjectClass`.
+`ri:GroupObjectClass` and `ri:CustomappObjectClass`.
 
 ## Extension items
 
@@ -74,7 +78,7 @@ single-valued strings unless noted.
 | UserType | `strazaPersona` | read from Straza `kind` |
 | UserType | `strazaOrigin` | read from Straza `origin` |
 | ServiceType | `strazaVersion`, `strazaRuntime`, `strazaStatus`, `strazaSource` | read from the app |
-| RoleType | `strazaApp` | read from the tool's app |
 | RoleType | `strazaKind` | read from the role kind |
 | RoleType | `strazaServer` | read from the role's owning MCP server |
 | RoleType | `strazaAdministers` (multivalued) | read from the servers the role administers |
+| RoleType | `strazaCovers` (multivalued) | read from the objects the role covers |

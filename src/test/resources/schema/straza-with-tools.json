@@ -1,0 +1,183 @@
+{
+  "//": "Straza mapping for universal-rest-connector. Every object class, __ACCOUNT__ and __GROUP__ included, is declared here.",
+  "//roles": "__GROUP__ objects are exported Straza roles; apps lists each role's apps.",
+  "target": {
+    "name": "Straza",
+    "credentialHint": "Mint one with strazactl api-token create --scope scim:read,scim:write,identity:read,apps:read,changes:read,config:read, then check the token's scope covers the resource you are reading or writing."
+  },
+  "sync": {
+    "feedEndpoint": "/v1/admin/changes"
+  },
+  "objects": [
+    {
+      "objectClass": "app",
+      "listEndpoint": "/v1/admin/apps",
+      "icfsUid": "id",
+      "icfsName": "name",
+      "attributes": {
+        "version": {},
+        "runtime": {},
+        "status": {},
+        "detail": { "returnedByDefault": false },
+        "source": {},
+        "tools": { "multivalued": true }
+      },
+      "//syncNote": "App events carry the app uid.",
+      "sync": {
+        "requestTypes": ["app"],
+        "self": ["app"]
+      }
+    },
+    {
+      "objectClass": "tool",
+      "listEndpoint": "/v1/admin/tools",
+      "icfsUid": "id",
+      "icfsName": "id",
+      "attributes": {
+        "app": {},
+        "app_id": {},
+        "description": {}
+      },
+      "//note": "The id is app:tool, unique across apps, so it is both uid and name.",
+      "//syncNote": "A tool event re-emits every tool; reconciliation removes deleted tools.",
+      "sync": {
+        "requestTypes": ["tool"],
+        "reemitAll": ["tool"]
+      }
+    },
+    {
+      "objectClass": "user",
+      "listEndpoint": "/v1/admin/users",
+      "icfsUid": "id",
+      "icfsName": "username",
+      "attributes": {
+        "email": {},
+        "display": {},
+        "title": {},
+        "status": {},
+        "origin": {},
+        "kind": {},
+        "external_id": {}
+      },
+      "associations": {
+        "roles": {
+          "endpoint": "/v1/admin/assignments",
+          "localField": "id",
+          "matchField": "subject_id",
+          "valueField": "role_id",
+          "where": { "subject_kind": "user" }
+        }
+      },
+      "//note": "Optional: __ACCOUNT__ carries the same users, kind and origin included.",
+      "//syncNote": "User and assignment changes arrive as user events; hard deletes arrive as identity events.",
+      "sync": {
+        "requestTypes": ["user"],
+        "self": ["user"],
+        "delete": ["identity"]
+      }
+    },
+    {
+      "objectClass": "__ACCOUNT__",
+      "//": "Users over SCIM 2.0. Uid is the SCIM id, name is userName.",
+      "dialect": "scim",
+      "basePath": "/scim/v2",
+      "coreSchema": "urn:ietf:params:scim:schemas:core:2.0:User",
+      "namespaces": { "ext": "urn:straza:params:scim:schemas:extension:2.0:User" },
+      "icfsUid": "id",
+      "icfsName": "userName",
+      "operations": ["search", "sync", "create", "update", "updateDelta", "delete"],
+      "endpoints": {
+        "list": "/Users",
+        "byId": "/Users/{id}",
+        "create": "/Users",
+        "replace": "/Users/{id}",
+        "patch": "/Users/{id}",
+        "delete": "/Users/{id}"
+      },
+      "//enable": "ConnId __ENABLE__ maps to SCIM active.",
+      "enable": "active",
+      "//revive": "Creating a deactivated userName again returns the same id.",
+      "//agentic": "Marks a created user as non-human when userType is agent or service. The mark cannot be undone.",
+      "createOnlySchemas": [
+        {
+          "urn": "urn:ietf:params:scim:schemas:extension:agent:2.0:Agent",
+          "when": { "attribute": "userType", "in": ["agent", "service"], "caseInsensitive": true },
+          "configGate": "emitAgenticUrn"
+        }
+      ],
+      "paging": { "pageSize": 200 },
+      "filters": { "pushable": { "__NAME__": "userName", "externalId": "externalId" } },
+      "attributes": {
+        "__NAME__": { "required": true, "creatable": true, "updateable": true },
+        "externalId": { "creatable": true, "updateable": true },
+        "displayName": { "creatable": true, "updateable": true },
+        "title": { "creatable": true, "updateable": true },
+        "email": { "path": "emails[primary=true].value", "creatable": true, "updateable": true },
+        "//typology": "The server ignores an absent typology field in a PUT, so clearing one needs a PATCH.",
+        "userType": { "creatable": true, "updateable": true, "clearVia": "patchOnly" },
+        "agencyMode": { "path": "ext:agencyMode", "creatable": true, "updateable": true, "clearVia": "patchOnly" },
+        "sponsor": { "path": "ext:sponsor", "creatable": true, "updateable": true, "clearVia": "patchOnly" },
+        "swarmId": { "path": "ext:swarmId", "creatable": true, "updateable": true, "clearVia": "patchOnly" },
+        "ephemeral": { "path": "ext:ephemeral", "dataType": "Boolean", "creatable": true, "updateable": true, "clearVia": "patchOnly" },
+        "//readonly": "Group membership, the lock block, kind and origin are read-only.",
+        "groups": { "path": "groups[].value", "multivalued": true },
+        "locked": { "path": "ext:locked", "dataType": "Boolean" },
+        "lockReason": { "path": "ext:lockReason" },
+        "lockedAt": { "path": "ext:lockedAt" },
+        "lockOrigin": { "path": "ext:lockOrigin" },
+        "kind": { "path": "ext:kind" },
+        "origin": { "path": "ext:origin" }
+      },
+      "sync": {
+        "requestTypes": ["user"],
+        "self": ["user"],
+        "delete": ["identity"]
+      }
+    },
+    {
+      "objectClass": "__GROUP__",
+      "//": "Exported Straza roles. Uid is the role id, name is the role name; members is the only writable attribute.",
+      "dialect": "scim",
+      "basePath": "/scim/v2",
+      "coreSchema": "urn:ietf:params:scim:schemas:core:2.0:Group",
+      "namespaces": { "ext": "urn:straza:params:scim:schemas:extension:2.0:Group" },
+      "icfsUid": "id",
+      "icfsName": "displayName",
+      "//lifecycle": "Roles are created, deleted and renamed in Straza, so create, delete and rename are refused.",
+      "operations": ["search", "sync", "update", "updateDelta"],
+      "operationHints": {
+        "create": "Roles are born in Straza, and the identity manager imports them and assigns membership.",
+        "delete": "Roles are deleted in Straza, and the identity manager drops the membership it assigned.",
+        "rename": "Roles are renamed in Straza, and the new name arrives with the next import."
+      },
+      "endpoints": {
+        "list": "/Groups",
+        "byId": "/Groups/{id}",
+        "replace": "/Groups/{id}",
+        "patch": "/Groups/{id}"
+      },
+      "paging": { "pageSize": 200 },
+      "filters": { "pushable": { "__NAME__": "displayName" } },
+      "attributes": {
+        "members": { "path": "members[].value", "multivalued": true, "creatable": true, "updateable": true },
+        "//projection": "Read-only role details; apps lists the role's apps.",
+        "role": { "path": "ext:role" },
+        "roleKind": { "path": "ext:roleKind" },
+        "plane": { "path": "ext:plane" },
+        "description": { "path": "ext:description" },
+        "apps": { "path": "ext:apps", "multivalued": true },
+        "tools": { "path": "ext:tools", "multivalued": true },
+        "policies": { "path": "ext:policies", "multivalued": true },
+        "administers": { "path": "ext:administers", "multivalued": true },
+        "server": { "path": "ext:server" }
+      },
+      "//syncNote": "Role and membership changes emit role events; a binding change re-emits every role.",
+      "sync": {
+        "requestTypes": ["role", "binding"],
+        "self": ["role"],
+        "delete": ["identity"],
+        "reemitAll": ["binding"]
+      }
+    }
+  ]
+}
